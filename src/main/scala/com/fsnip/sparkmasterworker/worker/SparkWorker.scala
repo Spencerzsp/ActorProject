@@ -1,7 +1,7 @@
 package com.fsnip.sparkmasterworker.worker
 
 import akka.actor.{Actor, ActorSelection, ActorSystem, Props}
-import com.fsnip.sparkmasterworker.common.RegisterWorkerInfo
+import com.fsnip.sparkmasterworker.common.{HeartBeat, RegisterWorkerInfo, SendHeartBeat}
 import com.typesafe.config.ConfigFactory
 
 /**
@@ -27,6 +27,20 @@ class SparkWorker(masterHost: String, masterPort: Int) extends Actor{
     }
     case RegisterWorkerInfo => {
       println("workerid = " + id + "注册成功！")
+
+      // 当注册成功后，就定义一个定时器，每隔一定时间，就发送SendHeartBeat给自己
+      import scala.concurrent.duration._
+      import context.dispatcher
+      // 说明
+      // 1. 0 millis 不延时，立即执行定时器
+      // 2. 3000 millis 表示每隔3秒执行 一次
+      // 3. self表示发送给自己
+      // 4. SendHeartBeat发送的内容
+      context.system.scheduler.schedule(0 millis, 3000 millis, self, SendHeartBeat)
+    }
+    case SendHeartBeat => {
+      sparkMasterProxy ! HeartBeat(id)
+      println("worker发送了"+ id + "心跳时间")
     }
   }
 }

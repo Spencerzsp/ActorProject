@@ -1,7 +1,7 @@
 package com.fsnip.sparkmasterworker.master
 
 import akka.actor.{Actor, ActorSystem, Props}
-import com.fsnip.sparkmasterworker.common.{RegisterWorkerInfo, WorkerInfo}
+import com.fsnip.sparkmasterworker.common.{HeartBeat, RegisterWorkerInfo, WorkerInfo}
 import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.mutable
@@ -16,8 +16,10 @@ import scala.collection.mutable
 class SparkMaster extends Actor{
 
   val workers = mutable.Map[String, WorkerInfo]()
+
   override def receive: Receive = {
     case "start" => println("master服务器启动了...")
+
     case RegisterWorkerInfo(id, cpu, ram) => {
       if(!workers.contains(id)){
         val workerInfo = new WorkerInfo(id, cpu, ram)
@@ -26,6 +28,13 @@ class SparkMaster extends Actor{
 
         sender() ! RegisterWorkerInfo
       }
+    }
+    case HeartBeat(id) => {
+      // 更新对应的worker的心跳时间
+      // 从workers中取出workerInfo
+      val workerInfo = workers(id)
+      workerInfo.lastHeartBeat = System.currentTimeMillis()
+      println("master更新了" + id + "心跳时间...")
     }
   }
 }
