@@ -40,7 +40,7 @@ class SparkWorker(masterHost: String, masterPort: Int) extends Actor{
     }
     case SendHeartBeat => {
       sparkMasterProxy ! HeartBeat(id)
-      println("worker发送了"+ id + "心跳时间")
+      println("worker发送了"+ id + "心跳时间" + System.currentTimeMillis())
     }
   }
 }

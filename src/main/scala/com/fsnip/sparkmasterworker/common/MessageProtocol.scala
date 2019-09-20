@@ -19,3 +19,8 @@ case object RegisterWorkerInfo
 case object SendHeartBeat
 // worker每隔一定时间由定时器触发，而向master发送的协议消息
 case class HeartBeat(id: String)
+
+// master给自己发送一个触发检查超时worker的信息
+case object StartTimeOutWorker
+// master给自己发消息，检测worker对于心跳超时的
+case object RemoveTimeOutWorker
