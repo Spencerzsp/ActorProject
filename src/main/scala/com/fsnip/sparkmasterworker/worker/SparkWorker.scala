@@ -11,13 +11,13 @@ import com.typesafe.config.ConfigFactory
   * @ Modified By：
   * @ Version:     
   */
-class SparkWorker(masterHost: String, masterPort: Int) extends Actor{
+class SparkWorker(masterHost: String, masterPort: Int, masterName: String) extends Actor{
 
   var sparkMasterProxy: ActorSelection = _
   var id = java.util.UUID.randomUUID().toString
 
   override def preStart(): Unit = {
-    sparkMasterProxy = context.actorSelection(s"akka.tcp://SparkMaster@${masterHost}:${masterPort}/user/SparkMaster-01")
+    sparkMasterProxy = context.actorSelection(s"akka.tcp://SparkMaster@${masterHost}:${masterPort}/user/${masterName}")
     println("sparkMasterProxy = " + sparkMasterProxy)
   }
   override def receive: Receive = {
@@ -47,17 +47,27 @@ class SparkWorker(masterHost: String, masterPort: Int) extends Actor{
 
 object SparkWorker{
   def main(args: Array[String]): Unit = {
-    val(workerHost, workerPort, masterHost, masterPort) = ("127.0.0.1", 10001, "127.0.0.1", 10005)
+    if(args.length != 6){
+      println("请输入workerHost workerPort workerName masterHost masterPort masterName")
+      sys.exit()
+    }
+    val workerHost = args(0)
+    val workerPort = args(1)
+    val workerName = args(2)
+    val masterHost = args(3)
+    val masterPort = args(4)
+    val masterName = args(5)
+//    val(workerHost, workerPort, masterHost, masterPort) = ("127.0.0.1", 10001, "127.0.0.1", 10005)
     val config = ConfigFactory.parseString(
       s"""
         akka.actor.provider = "akka.remote.RemoteActorRefProvider"
-        akka.remote.netty.tcp.hostname = $workerHost
-        akka.remote.netty.tcp.port = $workerPort
+        akka.remote.netty.tcp.hostname = ${workerHost}
+        akka.remote.netty.tcp.port = ${workerPort}
        """.stripMargin
     )
 
     val sparkWorkerSystem = ActorSystem("SparkWorker", config)
-    val sparkWorkerRef = sparkWorkerSystem.actorOf(Props(new SparkWorker(masterHost, masterPort)))
+    val sparkWorkerRef = sparkWorkerSystem.actorOf(Props(new SparkWorker(masterHost, masterPort.toInt, masterName)))
 
     sparkWorkerRef ! "start"
 
